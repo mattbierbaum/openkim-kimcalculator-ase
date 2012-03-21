@@ -1,0 +1,17 @@
+A simple calculator for ASE (the Atomic Simulation Environment) that
+uses KIM models as the force etc. calculators.
+
+It only requires the name of the model and the Atoms which you wish
+to simulate to initialize.  The test structure is automatically
+setup for you in initialization.
+
+This package requires:
+
+    openkim-python : the Python openkim interface with modules
+        -- kimservice
+        -- kimneighborlist
+
+    KIM_DIR be set
+
+To install, run
+python setup.py install
