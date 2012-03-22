@@ -1,0 +1,12 @@
+Need to check a few things in the KIM API.  The following
+things appear to not work (though they may be caused
+by the Python interface and not directly by KIM).
+
+    KIM_API_init_str : does not return a bad value when
+        initialization is not successful
+
+    KIM_API_get_index : appears to modify memory that it
+        does not own.  atoms.get_pbc() changes from
+        start to end of checkIndex call.  
+
+
