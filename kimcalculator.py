@@ -56,9 +56,8 @@ class KIMCalculator(object):
         self.pkim = None
 
     def set_atoms(self, atoms):
-        #return
-        #if self.pkim is not None:
-        #    self.free_kim()
+        if self.pkim is not None:
+            self.free_kim()
         self.init_kim(atoms)            
 
     def init_kim(self, atoms):
@@ -92,10 +91,10 @@ class KIMCalculator(object):
         self.km_numberAtomTypes    = KIM_API_get_data_int(self.pkim, "numberParticleTypes")
         self.km_atomTypes          = KIM_API_get_data_int(self.pkim, "particleTypes")
         self.km_coordinates        = KIM_API_get_data_double(self.pkim, "coordinates")
-        #if checkIndex(self.pkim,"particleCharge") >= 0:
-        #    self.km_particleCharge = KIM_API_get_data_double(self.pkim,"particleCharge")
-        #if checkIndex(self.pkim, "particleSize") >= 0:
-        #    self.km_particleSize = KIM_API_get_data_double(self.pkim,"particleSize")
+        if checkIndex(self.pkim,"particleCharge") >= 0:
+            self.km_particleCharge = KIM_API_get_data_double(self.pkim,"particleCharge")
+        if checkIndex(self.pkim, "particleSize") >= 0:
+            self.km_particleSize = KIM_API_get_data_double(self.pkim,"particleSize")
     
         # check what the model calculates and get model outputs
         if checkIndex(self.pkim,"energy") >= 0:
@@ -104,12 +103,12 @@ class KIMCalculator(object):
             self.km_forces = KIM_API_get_data_double(self.pkim, "forces")
         if checkIndex(self.pkim, "particleEnergy") >= 0:
             self.km_particleEnergy = KIM_API_get_data_double(self.pkim, "particleEnergy")
-        #if checkIndex(self.pkim, "virial") >=0:
-        #    self.km_virial = KIM_API_get_data_double(self.pkim, "virial")
-        #if checkIndex(self.pkim, "particleVirial") >=0:
-        #    self.km_particleVirial = KIM_API_get_data_double(self.pkim, "particleVirial")
-        #if checkIndex(self.pkim, "hessian")>=0:
-        #    self.km_hessian = KIM_API_get_data_double(self.pkim, "hessian")
+        if checkIndex(self.pkim, "virial") >=0:
+            self.km_virial = KIM_API_get_data_double(self.pkim, "virial")
+        if checkIndex(self.pkim, "particleVirial") >=0:
+            self.km_particleVirial = KIM_API_get_data_double(self.pkim, "particleVirial")
+        if checkIndex(self.pkim, "hessian")>=0:
+            self.km_hessian = KIM_API_get_data_double(self.pkim, "hessian")
  
         
     def free_kim(self):
@@ -386,12 +385,12 @@ def makekimscript(modelname,testname,atoms):
         kimstr += "forces  real*8  force  [numberOfParticles,3]\n"
     if checkIndex(km_pmdl, "particleEnergy") >=0 :
         kimstr += "particleEnergy  real*8  energy  [numberOfParticles]\n"
-    #if checkIndex(km_pmdl, "virial") >= 0:
-    #    kimstr += "virial  real*8  energy  [6]\n"
-    #if checkIndex(km_pmdl, "particleVirial") >=0 :
-    #    kimstr += "particleVirial  real*8  energy  [numberOfParticles,6]\n"
-    #if checkIndex(km_pmdl, "hessian") >= 0:
-    #    kimstr += "hessian  real*8  pressure  [numberOfParticles,numberOfParticles,3,3]\n"
+    if checkIndex(km_pmdl, "virial") >= 0:
+        kimstr += "virial  real*8  energy  [6]\n"
+    if checkIndex(km_pmdl, "particleVirial") >=0 :
+        kimstr += "particleVirial  real*8  energy  [numberOfParticles,6]\n"
+    if checkIndex(km_pmdl, "hessian") >= 0:
+        kimstr += "hessian  real*8  pressure  [numberOfParticles,numberOfParticles,3,3]\n"
     
     return kimstr
 
