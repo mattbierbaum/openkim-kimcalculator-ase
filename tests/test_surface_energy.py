@@ -5,7 +5,7 @@ from ase.visualize import view
 from kimcalculator import *
 from numpy import *
 
-ar = FaceCenteredCubic('Ar', pbc=[(0,0,0)], directions=[[1,0,0],[0,1,0],[0,0,1]], size=[4,4,4])
+ar = FaceCenteredCubic('Ar', pbc=[(1,1,1)], directions=[[1,0,0],[0,1,0],[1,1,1]], size=[4,4,4])
 
 for m in listmodels():
     if "Ar" in m:
@@ -23,5 +23,6 @@ for m in listmodels():
             print "\tsurface = ", surf_energy - bulk_energy  
             print      
         except SupportError, e:
-            print "\tskipping ", m, e, " ...\n"
+            print "\tskipping ", m
+            print "\t", e, " ...\n"
             continue 

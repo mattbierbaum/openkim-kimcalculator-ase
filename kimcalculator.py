@@ -113,7 +113,7 @@ class KIMCalculator(object):
         
     def free_kim(self):
         if self.uses_neighbors:
-            kimnl.free_neigh_object(self.pkim)
+            kimnl.cleanup(self.pkim)
         KIM_API_free(self.pkim)
 
         self.pkim = None
@@ -160,11 +160,8 @@ class KIMCalculator(object):
         ntypes = len(set(atoms.get_atomic_numbers()))
 
         if self.km_numberOfAtoms != natoms or self.km_numberAtomTypes != ntypes or self.cell_BC_changed(atoms):
-            if self.pkim:
-                self.free_kim()
-            
-            self.init_kim(atoms) 
-                       
+            self.set_atoms(atoms)
+                      
         if self.calculation_needed(atoms):
             # if the calculation is required we proceed to set the values of the standard things each model and atom class has
             self.km_numberOfAtoms[0]   = natoms 
