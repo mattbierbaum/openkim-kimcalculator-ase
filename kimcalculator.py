@@ -377,6 +377,18 @@ def checkIndex(pkim,variablename):
     return index
 
 
+def listmodels():   
+    import os, glob
+    try:
+        kimdir = os.environ['KIM_DIR']
+    except:
+        print "No KIM_DIR set"
+        return
+  
+    mmodels = [] 
+    for model in glob.glob(kimdir+'MODELs/*'):
+        models.append(os.path.basename(model))
+    return models
 
 class SupportError(Exception):
 
