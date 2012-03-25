@@ -57,8 +57,8 @@ class LennardJones:
 
 
 
-N = 4
-ar = FaceCenteredCubic('Ar', pbc=[(0,0,0)], directions=[[1,8,3],[0,1,0],[1,1,1]], size=[N,N,N])
+N = 5
+ar = FaceCenteredCubic('Ar', pbc=[(0,0,0)], directions=[[1,0,0],[0,1,0],[0,0,1]], size=[N,N,N])
 print ar.get_cell()
 #view(ar) 
 

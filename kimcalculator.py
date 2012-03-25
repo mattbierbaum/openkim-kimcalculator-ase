@@ -69,6 +69,7 @@ class KIMCalculator(object):
                                + abs(numpy.dot(atoms.get_cell()[1],atoms.get_cell()[2])))<10**(-8))
 
         self.makeTestString(atoms)
+        
         status, self.pkim = KIM_API_init_str(self.teststring, self.modelname)
         if KIM_STATUS_OK != status:
             KIM_API_report_error('KIM_API_init',status)
@@ -333,7 +334,7 @@ def makekimscript(modelname,testname,atoms):
         kimstr += "NEIGH_PURE_H flag\n"
         kimstr += "NEIGH_PURE_F flag\n"
         kimstr += "CLUSTER flag \n"        
-    
+   
     # MODEL_INPUT section
     kimstr += "MODEL_INPUT:\n"
     if checkIndex(km_pmdl,"numberOfParticles")>=0:
@@ -388,7 +389,6 @@ def makekimscript(modelname,testname,atoms):
         kimstr += "particleVirial  real*8  energy  [numberOfParticles,6]\n"
     if checkIndex(km_pmdl, "hessian") >= 0:
         kimstr += "hessian  real*8  pressure  [numberOfParticles,numberOfParticles,3,3]\n"
-    
     return kimstr
 
 def uses_neighbors(pkim):
