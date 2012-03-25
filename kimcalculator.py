@@ -111,7 +111,7 @@ class KIMCalculator(object):
         if checkIndex(self.pkim, "hessian")>=0:
             self.km_hessian = KIM_API_get_data_double(self.pkim, "hessian")
  
-        
+
     def free_kim(self):
         if self.uses_neighbors:
             kimnl.cleanup(self.pkim)

@@ -6,7 +6,7 @@ from kimcalculator import *
 from numpy import *
 
 symbol = 'Ar'
-ar = FaceCenteredCubic(symbol, pbc=[(1,0,0)], directions=[[1,0,0],[0,1,0],[0,0,1]], size=[5,5,5])
+ar = FaceCenteredCubic(symbol, pbc=[(1,1,1)], directions=[[1,0,0],[0,1,0],[0,0,1]], size=[5,5,1])
 
 for m in listmodels():
     if symbol in m:
