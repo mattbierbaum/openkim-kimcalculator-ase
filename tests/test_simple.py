@@ -5,7 +5,7 @@ from ase.visualize import view
 from kimcalculator import *
 from numpy import *
 
-N = 1 
+N = 2 
 ar = FaceCenteredCubic('Ar', pbc=[(1,1,1)], directions=[[1,0,0],[0,1,0],[0,0,1]], size=[N,N,N])
 print ar.get_cell()
 #view(ar) 

@@ -6,13 +6,13 @@ from kimcalculator import *
 from numpy import *
 
 symbol = 'Ar'
-ar = FaceCenteredCubic(symbol, pbc=[(1,1,1)], directions=[[1,0,0],[0,1,0],[0,0,1]], size=[5,5,1])
+cells = 15
+ar = FaceCenteredCubic(symbol, pbc=[(1,1,1)], directions=[[1,0,0],[0,1,0],[0,0,1]], size=[cells,cells,1])
 
 for m in listmodels():
     if symbol in m:
         try:
             print "Try model: ", m
-            ar.set_pbc([(1,1,1)])
             calc1 = KIMCalculator(m)
             ar.set_calculator(calc1)
            
