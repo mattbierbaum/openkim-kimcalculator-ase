@@ -17,4 +17,5 @@ for m in listmodels():
             calc = KIMCalculator(m)
             print m, " lattice const = ", opt.fmin(energy, x0=[4], args=(calc,), disp=False)
         except:
+            print "model incompatible"
             continue

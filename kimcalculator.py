@@ -55,6 +55,8 @@ class KIMCalculator(object):
         # the KIM object
         self.pkim = None
 
+        self.uses_neighbors = None
+
     def set_atoms(self, atoms):
         if self.pkim is not None:
             self.free_kim()
@@ -62,6 +64,7 @@ class KIMCalculator(object):
 
     def init_kim(self, atoms):
         # set the ase atoms stuff to current configuration
+
         self.pbc = atoms.get_pbc()
         self.cell = atoms.get_cell()
         self.cell_orthogonal = ((abs(numpy.dot(atoms.get_cell()[0],atoms.get_cell()[1])) \
@@ -69,7 +72,7 @@ class KIMCalculator(object):
                                + abs(numpy.dot(atoms.get_cell()[1],atoms.get_cell()[2])))<10**(-8))
 
         self.makeTestString(atoms)
-        
+
         status, self.pkim = KIM_API_init_str(self.teststring, self.modelname)
         if KIM_STATUS_OK != status:
             KIM_API_report_error('KIM_API_init',status)
@@ -83,7 +86,7 @@ class KIMCalculator(object):
         # set up the neighborlist as well, if necessary 
         self.uses_neighbors = uses_neighbors(self.pkim) 
         if self.uses_neighbors:
-            kimnl.initialize(self.pkim)
+            kimnl.nbl_initialize(self.pkim)
 
         KIM_API_model_init(self.pkim)
        
@@ -113,8 +116,9 @@ class KIMCalculator(object):
  
 
     def free_kim(self):
+
         if self.uses_neighbors:
-            kimnl.cleanup(self.pkim)
+            kimnl.nbl_cleanup(self.pkim)
         KIM_API_free(self.pkim)
 
         self.pkim = None
@@ -178,8 +182,8 @@ class KIMCalculator(object):
             
             # build the neighborlist (not a cell-based, type depends on model)
             if self.uses_neighbors:
-                kimnl.set_cell(atoms.get_cell().flatten(), atoms.get_pbc().flatten().astype('int8'))
-                kimnl.build_neighborlist(self.pkim)
+                kimnl.nbl_set_cell(atoms.get_cell().flatten(), atoms.get_pbc().flatten().astype('int8'))
+                kimnl.nbl_build_neighborlist(self.pkim)
             KIM_API_model_compute(self.pkim)
         
     def get_potential_energy(self,atoms):
@@ -230,7 +234,8 @@ class KIMCalculator(object):
         """ 
         Garbage collects the KIM API objects automatically
         """
-        KIM_API_free(self.pkim)
+        #KIM_API_free(self.pkim)
+        self.free_kim()
 
 
 #
