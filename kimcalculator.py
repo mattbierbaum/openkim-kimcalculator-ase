@@ -189,7 +189,7 @@ class KIMCalculator(object):
     def get_potential_energy(self,atoms):
         self.update(atoms)
         if self.km_energy is not None:
-            return self.km_energy
+            return self.km_energy.copy()[0]
         else:
             raise SupportError("energy") 
     
@@ -197,7 +197,7 @@ class KIMCalculator(object):
         self.update(atoms)
         if self.km_particleEnergy is not None:
             particleEnergies = self.km_particleEnergy.reshape((self.km_numberOfAtoms,3))
-            return particleEnergies
+            return particleEnergies.copy()
         else:
             raise SupportError("potential energies") 
      
@@ -205,28 +205,28 @@ class KIMCalculator(object):
         self.update(atoms)
         if self.km_forces is not None:
             forces = self.km_forces.reshape((self.km_numberOfAtoms,3))
-            return forces
+            return forces.copy()
         else:
             raise SupportError("forces") 
     
     def get_stress(self,atoms):
         self.update(atoms)
         if self.km_virial is not None:
-            return self.km_virial
+            return self.km_virial.copy()
         else:
             raise SupportError("stress")
 
     def get_stresses(self,atoms):
         self.update(atoms)
         if self.km_particleVirial is not None:
-            return self.km_particleVirial
+            return self.km_particleVirial.copy()
         else:
             raise SupportError("stress per particle")
 
     def get_hessian(self,atoms):
         self.update(atoms) 
         if self.km_hessian is not None:
-            return self.km_hessian
+            return self.km_hessian.copy()
         else:
             raise SupportError("hessian") 
 
@@ -234,7 +234,6 @@ class KIMCalculator(object):
         """ 
         Garbage collects the KIM API objects automatically
         """
-        #KIM_API_free(self.pkim)
         self.free_kim()
 
 

@@ -64,7 +64,7 @@ print ar.get_cell()
 
 calc1 = KIMCalculator("ex_model_Ar_P_LJ")
 ar.set_calculator(calc1)
-kim_energy = ar.get_potential_energy()[0]
+kim_energy = ar.get_potential_energy()
 print "kim energy = ", kim_energy 
 
 calc2 = LennardJones(epsilon=epsilon, sigma=sigma, cutoff=cutoff)

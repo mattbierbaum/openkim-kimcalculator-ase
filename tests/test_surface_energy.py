@@ -18,10 +18,10 @@ for m in listmodels():
            
             N = ar.get_number_of_atoms()
             ar.set_pbc([(1,1,1)])
-            bulk_energy = ar.get_potential_energy()[0] / N
+            bulk_energy = ar.get_potential_energy() / N
 
             ar.set_pbc([(1,1,0)])
-            surf_energy = ar.get_potential_energy()[0] / N
+            surf_energy = ar.get_potential_energy() / N
             print "\tsurface = ", surf_energy - bulk_energy  
 
             #virial = ar.get_stresses()

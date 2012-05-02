@@ -9,7 +9,7 @@ symbol = 'Ar'
 def energy(a, calc):
     atoms = bulk(symbol, 'fcc', a=a)
     atoms.set_calculator(calc)
-    return atoms.get_potential_energy()[0]
+    return atoms.get_potential_energy()
 
 for m in listmodels():
     if symbol in m:
