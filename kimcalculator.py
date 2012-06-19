@@ -24,14 +24,12 @@ __author__  = 'Yanjiun Chen, Matt Bierbaum, Woosong Choi',
 
 class KIMCalculator(object):
 
-    def __init__(self,modelname,kimfile=False,nbl_type='rvec'):
+    def __init__(self,modelname,kimfile=False):
         """
         Creates a KIM calculator to ASE for a given modelname.
         If kimfile is True, then it will attempt to look for that file
         in the standard location (KIM_TESTS_DIR).  Otherwise, 
-        attempt to build the string on our own.  This requires knowledge of 
-        the neighborlist type.  The options are:
-            nbl_type: 'rvec', 'opbc_{h,f}', 'pure_{h,f}', 'none'
+        attempt to build the string on our own. 
         """
         # correctly set up the .kim file so that is matches that
         # of modelname, i.e. will run any types
@@ -41,11 +39,14 @@ class KIMCalculator(object):
         self.teststring = None
 
         self.modelname = modelname 
+        
+        """
         status, km_pmdl = KIM_API_model_info(modelname)
         if KIM_STATUS_OK > status:
             KIM_API_report_error('KIM_API_model_info',status)
             raise InitializationError(self.modelname)
         KIM_API_free(km_pmdl)
+        """
 
         # initialize pointers for kim
         self.km_numberOfAtoms  = None
@@ -73,7 +74,6 @@ class KIMCalculator(object):
 
     def init_kim(self, atoms):
         # set the ase atoms stuff to current configuration
-
         self.pbc = atoms.get_pbc()
         self.cell = atoms.get_cell()
         self.cell_orthogonal = ((abs(numpy.dot(atoms.get_cell()[0],atoms.get_cell()[1])) \
@@ -334,12 +334,8 @@ def makekimscript(modelname,testname,atoms):
         if index3 < 0 and index4 < 0 and index5 < 0:
             raise SupportError("Periodic neighborlist")
         if cell_orthogonal:
-            # we need periodicity of one variety if any pbc
-            #if index3 < 0 and index4 < 0 and index5 < 0:
-            #    raise SupportError("MI_OPBC_X")
             kimstr += "MI_OPBC_H flag \n"
             kimstr += "MI_OPBC_F flag \n"
-            tmp_kimstr +="boxSideLengths  real*8  length  [3]\n"
          else:
             if index3 < 0:
                 raise SupportError("NEIGH_RVEC_F")
@@ -353,29 +349,26 @@ def makekimscript(modelname,testname,atoms):
    
     # MODEL_INPUT section
     kimstr += "MODEL_INPUT:\n"
-    if checkIndex(km_pmdl,"numberOfParticles")>=0:
-        kimstr +="numberOfParticles  integer  none  []\n"
-    if checkIndex(km_pmdl, "numberParticleTypes")>=0:
-        kimstr +="numberParticleTypes  integer  none  []\n"
-    if checkIndex(km_pmdl, "particleTypes")>=0:
-        kimstr +="particleTypes  integer  none  [numberOfParticles]\n"
-    if checkIndex(km_pmdl, "coordinates")>=0:
-       kimstr +="coordinates  real*8  length  [numberOfParticles,3]\n" 
+    kimstr +="numberOfParticles  integer  none  []\n"
+    kimstr +="numberParticleTypes  integer  none  []\n"
+    kimstr +="particleTypes  integer  none  [numberOfParticles]\n"
+    kimstr +="coordinates  real*8  length  [numberOfParticles,3]\n" 
+
     if checkIndex(km_pmdl, "particleCharge")>=0:
         kimstr +="particleCharge  real*8  charge  [numberOfParticles]\n"
     if checkIndex(km_pmdl, "particleSize")>=0:
         kimstr +="particleSize  real*8  length  [numberOfParticles]\n"
     if checkIndex(km_pmdl, "numberContributingParticles"):
         kimstr +="numberContributingParticles  integer  none  []\n"
-    
+    if checkIndex(km_pmdl, "boxSideLengths"): 
+        kimstr +="boxSideLengths  real*8  length  [3]\n"
+
     # confused about the get_neigh and neighObject pointer.  this is test dependent.  do we include this?   
     # how do we decide whether or not to include this? Include for now. decide later
-    #################################################  
     if checkIndex(km_pmdl, "get_neigh")>=0:
         kimstr += "get_neigh  method  none []\n"
     if checkIndex(km_pmdl, "neighObject")>=0:
         kimstr += "neighObject  pointer  none  []\n"
-    #############################################
      
     # MODEL_OUTPUT section
     kimstr += "MODEL_OUTPUT: \n"  
