@@ -336,7 +336,7 @@ def makekimscript(modelname,testname,atoms):
         if cell_orthogonal:
             kimstr += "MI_OPBC_H flag \n"
             kimstr += "MI_OPBC_F flag \n"
-         else:
+        else:
             if index3 < 0:
                 raise SupportError("NEIGH_RVEC_F")
     else:
@@ -416,8 +416,11 @@ def listmodels():
     try:
         kimdir = os.environ['KIM_MODELS_DIR']
     except:
-        print "No KIM_MODELS_DIR set"
-        return
+        try:
+            kimdir = os.environ['KIM_DIR']+"/MODELs"            
+        except:
+            print "No KIM_MODELS_DIR set"
+            return
   
     models = [] 
     for model in glob.glob(kimdir+'/*'):
