@@ -24,10 +24,20 @@ __author__  = 'Yanjiun Chen, Matt Bierbaum, Woosong Choi',
 
 class KIMCalculator(object):
 
-    def __init__(self,modelname):
+    def __init__(self,modelname,kimfile=False,nbl_type='rvec'):
+        """
+        Creates a KIM calculator to ASE for a given modelname.
+        If kimfile is True, then it will attempt to look for that file
+        in the standard location (KIM_TESTS_DIR).  Otherwise, 
+        attempt to build the string on our own.  This requires knowledge of 
+        the neighborlist type.  The options are:
+            nbl_type: 'rvec', 'opbc_{h,f}', 'pure_{h,f}', 'none'
+        """
         # correctly set up the .kim file so that is matches that
         # of modelname, i.e. will run any types
-        self.testname = "test_"+modelname
+        self.kimfile = kimfile
+        if self.kimfile == False:
+            self.testname = "test_"+modelname
         self.teststring = None
 
         self.modelname = modelname 
@@ -54,7 +64,6 @@ class KIMCalculator(object):
 
         # the KIM object
         self.pkim = None
-
         self.uses_neighbors = None
 
     def set_atoms(self, atoms):
@@ -71,9 +80,12 @@ class KIMCalculator(object):
                                + abs(numpy.dot(atoms.get_cell()[0],atoms.get_cell()[2])) \
                                + abs(numpy.dot(atoms.get_cell()[1],atoms.get_cell()[2])))<10**(-8))
 
-        self.makeTestString(atoms)
+        if self.kimfile == False:
+            self.makeTestString(atoms)
+            status, self.pkim = KIM_API_init_str(self.teststring, self.modelname)
+        else:
+            status, self.pkim = KIM_API_init(self.teststring, self.modelname)
 
-        status, self.pkim = KIM_API_init_str(self.teststring, self.modelname)
         if KIM_STATUS_OK != status:
             KIM_API_report_error('KIM_API_init',status)
             raise InitializationError(self.modelname)
@@ -258,7 +270,6 @@ def makekimscript(modelname,testname,atoms):
 
     # to get model units, inputs, outputs, options we call KIM_API_model_info
     status, km_pmdl = KIM_API_model_info(modelname) 
-    # this needs to be a pointer    
  
     # BASE UNIT LINES
     unit_length = KIM_API_get_unit_length(km_pmdl)
@@ -275,7 +286,6 @@ def makekimscript(modelname,testname,atoms):
 
 
     # SUPPORTED_ATOM/PARTICLE_TYPES
-    
     kimstr += "SUPPORTED_AOM/PARTICLES_TYPES: \n"    
 
     # check ASE atoms class for which atoms it has
@@ -317,6 +327,7 @@ def makekimscript(modelname,testname,atoms):
     index5 = checkIndex(km_pmdl, "MI_OPBC_F")
     index6 = checkIndex(km_pmdl, "CLUSTER")
 
+    tmp_kimstr = ""
     if pbc.any():
         kimstr += "NEIGH_RVEC_F flag \n"
         # we need to have RVEC if the cell is slanty
@@ -328,7 +339,8 @@ def makekimscript(modelname,testname,atoms):
             #    raise SupportError("MI_OPBC_X")
             kimstr += "MI_OPBC_H flag \n"
             kimstr += "MI_OPBC_F flag \n"
-        else:
+            tmp_kimstr +="boxSideLengths  real*8  length  [3]\n"
+         else:
             if index3 < 0:
                 raise SupportError("NEIGH_RVEC_F")
     else:
@@ -364,13 +376,7 @@ def makekimscript(modelname,testname,atoms):
     if checkIndex(km_pmdl, "neighObject")>=0:
         kimstr += "neighObject  pointer  none  []\n"
     #############################################
-    if checkIndex(km_pmdl, "process_dEdr")>=0:
-        kimstr +="process_dEdr  method  none  []\n"
-    if checkIndex(km_pmdl, "process_d2Edr2")>=0:
-        kimstr +="process_d2Edr2  method  none  []\n"
-    if checkIndex(km_pmdl, "boxSideLengths")>=0:
-        kimstr +="boxSideLengths  real*8  length  [3]\n"
-      
+     
     # MODEL_OUTPUT section
     kimstr += "MODEL_OUTPUT: \n"  
     if checkIndex(km_pmdl, "compute")>=0:
