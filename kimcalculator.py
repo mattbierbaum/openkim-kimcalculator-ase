@@ -131,6 +131,7 @@ class KIMCalculator(object):
 
         if self.uses_neighbors:
             kimnl.nbl_cleanup(self.pkim)
+        KIM_API_model_destroy(self.pkim)
         KIM_API_free(self.pkim)
 
         self.pkim = None
@@ -246,7 +247,13 @@ class KIMCalculator(object):
         """ 
         Garbage collects the KIM API objects automatically
         """
-        self.free_kim()
+        if self.uses_neighbors:
+            kimnl.nbl_cleanup(self.pkim)
+        KIM_API_free(self.pkim)        
+        self.pkim=None        
+    
+        #self.free_kim()
+        
 
 
 #
