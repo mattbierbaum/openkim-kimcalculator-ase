@@ -359,16 +359,16 @@ def makekimscript(modelname,testname,atoms):
     kimstr +="numberOfParticles  integer  none  []\n"
     kimstr +="numberParticleTypes  integer  none  []\n"
     kimstr +="particleTypes  integer  none  [numberOfParticles]\n"
-    kimstr +="coordinates  real*8  length  [numberOfParticles,3]\n" 
+    kimstr +="coordinates  double  length  [numberOfParticles,3]\n" 
 
     if checkIndex(km_pmdl, "particleCharge")>=0:
-        kimstr +="particleCharge  real*8  charge  [numberOfParticles]\n"
+        kimstr +="particleCharge  double  charge  [numberOfParticles]\n"
     if checkIndex(km_pmdl, "particleSize")>=0:
-        kimstr +="particleSize  real*8  length  [numberOfParticles]\n"
+        kimstr +="particleSize  double  length  [numberOfParticles]\n"
     if checkIndex(km_pmdl, "numberContributingParticles"):
         kimstr +="numberContributingParticles  integer  none  []\n"
     if checkIndex(km_pmdl, "boxSideLengths"): 
-        kimstr +="boxSideLengths  real*8  length  [3]\n"
+        kimstr +="boxSideLengths  double  length  [3]\n"
 
     # confused about the get_neigh and neighObject pointer.  this is test dependent.  do we include this?   
     # how do we decide whether or not to include this? Include for now. decide later
@@ -386,19 +386,19 @@ def makekimscript(modelname,testname,atoms):
     if checkIndex(km_pmdl, "destroy") >= 0:
         kimstr += "destroy  method  none  []\n"
     if checkIndex(km_pmdl, "cutoff") >= 0:
-        kimstr += "cutoff  real*8  length  []\n"
+        kimstr += "cutoff  double  length  []\n"
     if checkIndex(km_pmdl, "energy") >= 0:
-        kimstr += "energy  real*8  energy  []\n"
+        kimstr += "energy  double  energy  []\n"
     if checkIndex(km_pmdl, "forces") >= 0:
-        kimstr += "forces  real*8  force  [numberOfParticles,3]\n"
+        kimstr += "forces  double  force  [numberOfParticles,3]\n"
     if checkIndex(km_pmdl, "particleEnergy") >=0 :
-        kimstr += "particleEnergy  real*8  energy  [numberOfParticles]\n"
+        kimstr += "particleEnergy  double  energy  [numberOfParticles]\n"
     if checkIndex(km_pmdl, "virial") >= 0:
-        kimstr += "virial  real*8  energy  [6]\n"
+        kimstr += "virial  double  energy  [6]\n"
     if checkIndex(km_pmdl, "particleVirial") >=0 :
-        kimstr += "particleVirial  real*8  energy  [numberOfParticles,6]\n"
+        kimstr += "particleVirial  double  energy  [numberOfParticles,6]\n"
     if checkIndex(km_pmdl, "hessian") >= 0:
-        kimstr += "hessian  real*8  pressure  [numberOfParticles,numberOfParticles,3,3]\n"
+        kimstr += "hessian  double  pressure  [numberOfParticles,numberOfParticles,3,3]\n"
     return kimstr
 
 def uses_neighbors(pkim):
