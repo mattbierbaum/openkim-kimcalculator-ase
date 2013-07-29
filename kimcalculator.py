@@ -17,36 +17,44 @@
 
 from kimservice import *
 import kimneighborlist as kimnl
+import glob
 import numpy
 
-__version__ = '0.1'
+__version__ = '0.2'
 __author__  = 'Yanjiun Chen, Matt Bierbaum, Woosong Choi',
 
 class KIMCalculator(object):
 
-    def __init__(self,modelname,kimfile=False):
+    def __init__(self, modelname, testname="", search=True):
         """
         Creates a KIM calculator to ASE for a given modelname.
-        If kimfile is True, then it will attempt to look for that file
-        in the standard location (KIM_TESTS_DIR).  Otherwise, 
-        attempt to build the string on our own. 
+        If testname is given, then KIMCalculator looks on the
+        standard path (KIM_TESTS_DIR) for the relevant file.
+
+        Otherwise, if search if True, it will look in the current
+        folder, finally falling back to creating the test string
+        from the configuration of atoms
         """
         # correctly set up the .kim file so that is matches that
         # of modelname, i.e. will run any types
-        self.kimfile = kimfile
-        if self.kimfile == False:
-            self.testname = "test_"+modelname
+        self.modelname = modelname
+        self.testname = None
         self.teststring = None
+        self.kimfile = False
 
-        self.modelname = modelname 
-        
-        """
-        status, km_pmdl = KIM_API_model_info(modelname)
-        if KIM_STATUS_OK > status:
-            KIM_API_report_error('KIM_API_model_info',status)
-            raise InitializationError(self.modelname)
-        KIM_API_free(km_pmdl)
-        """
+        if testname:
+            self.testname = testname
+            self.kimfile = True
+        else:
+            if search:
+                potentials = glob.glob("./*.kim")
+                for pot in potentials:
+                    try:
+                        with open(potentials[0]) as f:
+                            self.teststring = f.read()
+                            self.kimfile = True
+                    except Exception as e:
+                        continue
 
         # initialize pointers for kim
         self.km_numberOfAtoms  = None
@@ -68,7 +76,7 @@ class KIMCalculator(object):
         self.uses_neighbors = None
 
     def set_atoms(self, atoms):
-        if self.pkim is not None:
+        if self.pkim:
             self.free_kim()
         self.init_kim(atoms)            
 
@@ -80,11 +88,14 @@ class KIMCalculator(object):
                                + abs(numpy.dot(atoms.get_cell()[0],atoms.get_cell()[2])) \
                                + abs(numpy.dot(atoms.get_cell()[1],atoms.get_cell()[2])))<10**(-8))
 
-        if self.kimfile == False:
+        if not self.kimfile:
             self.makeTestString(atoms)
             status, self.pkim = KIM_API_init_str(self.teststring, self.modelname)
         else:
-            status, self.pkim = KIM_API_init(self.teststring, self.modelname)
+            if self.teststring:
+                status, self.pkim = KIM_API_init_str(self.teststring, self.modelname)
+            else:
+                status, self.pkim = KIM_API_init(self.testname, self.modelname)
 
         if KIM_STATUS_OK != status:
             KIM_API_report_error('KIM_API_init',status)
@@ -136,12 +147,12 @@ class KIMCalculator(object):
 
         self.pkim = None
     
-    def makeTestString(self,atoms):
+    def makeTestString(self, atoms, tmp_test_name="test_name"):
         """
         makes string if it doesn't exist, if exists just keeps it as is
         """
         if self.teststring is None or self.cell_BC_changed(atoms):
-            self.teststring = makekimscript(self.modelname,self.testname,atoms)
+            self.teststring = makekimscript(self.modelname, tmp_test_name, atoms)
 
     def cell_BC_changed(self,atoms):
         """
@@ -243,6 +254,10 @@ class KIMCalculator(object):
         else:
             raise SupportError("hessian") 
 
+    def get_NBC_method(self):
+        if self.pkim:
+            return KIM_API_get_NBC_method(self.pkim)
+
     def __del__(self):
         """ 
         Garbage collects the KIM API objects automatically
@@ -293,7 +308,7 @@ def makekimscript(modelname,testname,atoms):
 
 
     # SUPPORTED_ATOM/PARTICLE_TYPES
-    kimstr += "SUPPORTED_AOM/PARTICLES_TYPES: \n"    
+    kimstr += "SUPPORTED_ATOM/PARTICLES_TYPES: \n"
 
     # check ASE atoms class for which atoms it has
     acodes = set(atoms.get_atomic_numbers())
@@ -333,22 +348,24 @@ def makekimscript(modelname,testname,atoms):
     index4 = checkIndex(km_pmdl, "MI_OPBC_H")
     index5 = checkIndex(km_pmdl, "MI_OPBC_F")
     index6 = checkIndex(km_pmdl, "CLUSTER")
+    index7 = checkIndex(km_pmdl, "NEIGH_RVEC_H")
 
     tmp_kimstr = ""
     if pbc.any():
         kimstr += "NEIGH_RVEC_F flag \n"
         # we need to have RVEC if the cell is slanty
-        if index3 < 0 and index4 < 0 and index5 < 0:
+        if index3 < 0 and index7 < 0 and index4 < 0 and index5 < 0:
             raise SupportError("Periodic neighborlist")
         if cell_orthogonal:
             kimstr += "MI_OPBC_H flag \n"
             kimstr += "MI_OPBC_F flag \n"
         else:
-            if index3 < 0:
-                raise SupportError("NEIGH_RVEC_F")
+            if index3 < 0 and index7 < 0:
+                raise SupportError("NEIGH_RVEC_F or NEIGH_RVEC_H")
     else:
-        if index1 < 0 and index2 < 0 and index3 < 0 and index6 < 0:
+        if index1 < 0 and index2 < 0 and index3 < 0 and index6 < 0 and index7 < 0:
             raise SupportError("Not periodic")
+        kimstr += "NEIGH_RVEC_H flag\n"
         kimstr += "NEIGH_RVEC_F flag\n"
         kimstr += "NEIGH_PURE_H flag\n"
         kimstr += "NEIGH_PURE_F flag\n"
