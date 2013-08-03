@@ -203,7 +203,7 @@ class KIMCalculator(object):
             symbols = atoms.get_chemical_symbols()
             for i in range(natoms):
                 self.km_atomTypes[i] = KIM_API_get_partcl_type_code(self.pkim, symbols[i])
-            
+
             # build the neighborlist (not a cell-based, type depends on model)
             if self.uses_neighbors:
                 kimnl.nbl_set_cell(atoms.get_cell().flatten(), atoms.get_pbc().flatten().astype('int8'))
@@ -257,6 +257,10 @@ class KIMCalculator(object):
     def get_NBC_method(self):
         if self.pkim:
             return KIM_API_get_NBC_method(self.pkim)
+
+    def set_ghosts(self, ghosts):
+        if self.uses_neighbors:
+            kimnl.nbl_set_ghosts(ghosts)
 
     def __del__(self):
         """ 
