@@ -64,7 +64,7 @@ class KIMCalculator(Calculator):
     on the capabilities of the model with which the calculator
     is initialized.
     """
-    def __init__(self, modelname, testname="", search=True, check_before_update=True):
+    def __init__(self, modelname, testname="", search=True, check_before_update=True, kimstring=""):
         """
         Creates a KIM calculator to ASE for a given modelname.
 
@@ -94,6 +94,12 @@ class KIMCalculator(Calculator):
                 2    atoms:    65us      13.9ms
                 54   atoms:    289us     13.8ms
                 1458 atoms:    9.4ms     14.0ms
+
+        kimstring: str
+            A complete description of what our test requires as passed
+            to the calculator as a proper kimfile string.  This option
+            overrides all other options.
+
         Returns
         -------
             out: KIMcalculator object
@@ -101,27 +107,28 @@ class KIMCalculator(Calculator):
         """
         self.modelname = modelname
         self.check_before_update = check_before_update
+        self.teststring = kimstring
         self.testname = None
-        self.teststring = None
         self.kimfile = False
 
-        if testname:
-            self.testname = testname
+        if not self.teststring:
+            if testname:
+                self.testname = testname
 
-            # we will assume that the kimfile is indeed present
-            # make the KIM API do the error checking if it is not
-            self.kimfile = True
-        else:
-            if search:
-                # look in the current directory for kim files
-                potentials = glob.glob("./*.kim")
-                for pot in potentials:
-                    try:
-                        with open(potentials[0]) as f:
-                            self.teststring = f.read()
-                            self.kimfile = True
-                    except Exception as e:
-                        continue
+                # we will assume that the kimfile is indeed present
+                # make the KIM API do the error checking if it is not
+                self.kimfile = True
+            else:
+                if search:
+                    # look in the current directory for kim files
+                    potentials = glob.glob("./*.kim")
+                    for pot in potentials:
+                        try:
+                            with open(potentials[0]) as f:
+                                self.teststring = f.read()
+                                self.kimfile = True
+                        except Exception as e:
+                            continue
 
         # initialize pointers for kim
         self.km_numberOfAtoms = None
@@ -220,7 +227,7 @@ class KIMCalculator(Calculator):
 
     def make_test_string(self, atoms, tmp_name="test_name"):
         """ Makes string if it doesn't exist, if exists just keeps it as is """
-        if self.teststring is None or self.cell_BC_changed(atoms):
+        if not self.teststring or self.cell_BC_changed(atoms):
             self.teststring = make_kimscript(tmp_name, self.modelname, atoms)
 
     def cell_BC_changed(self, atoms):
