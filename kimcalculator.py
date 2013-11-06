@@ -280,14 +280,14 @@ class KIMCalculator(Calculator):
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
         self.update(atoms)
-        if self.km_energy:
+        if self.km_energy is not None:
             return self.km_energy.copy()[0]
         else:
             raise SupportError("energy")
 
     def get_potential_energies(self, atoms):
         self.update(atoms)
-        if self.km_particleEnergy:
+        if self.km_particleEnergy is not None:
             particleEnergies = self.km_particleEnergy
             return particleEnergies.copy()
         else:
@@ -295,7 +295,7 @@ class KIMCalculator(Calculator):
 
     def get_forces(self, atoms):
         self.update(atoms)
-        if self.km_forces:
+        if self.km_forces is not None:
             forces = self.km_forces.reshape((self.km_numberOfAtoms, 3))
             return forces.copy()
         else:
@@ -303,21 +303,21 @@ class KIMCalculator(Calculator):
 
     def get_stress(self, atoms):
         self.update(atoms)
-        if self.km_virial:
+        if self.km_virial is not None:
             return self.km_virial.copy()
         else:
             raise SupportError("stress")
 
     def get_stresses(self, atoms):
         self.update(atoms)
-        if self.km_particleVirial:
+        if self.km_particleVirial is not None:
             return self.km_particleVirial.copy()
         else:
             raise SupportError("stress per particle")
 
     def get_hessian(self, atoms):
         self.update(atoms)
-        if self.km_hessian:
+        if self.km_hessian is not None:
             return self.km_hessian.copy()
         else:
             raise SupportError("hessian")
@@ -495,7 +495,8 @@ def listmodels():
 
     models = []
     for model in glob.glob(os.path.join(kimdir, '*')):
-        models.append(os.path.basename(model))
+        if os.path.isdir(model):
+            models.append(os.path.basename(model))
     return models
 
 
