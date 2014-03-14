@@ -460,11 +460,12 @@ def make_kimscript(testname, modelname, atoms):
         kimstr += "forces  double  force  [numberOfParticles,3]\n"
     if checkIndex(km_pmdl, "particleEnergy") >= 0:
         kimstr += "particleEnergy  double  energy  [numberOfParticles]\n"
-    if checkIndex(km_pmdl, "virial") >= 0:
+    if (checkIndex(km_pmdl, "virial") >= 0 or checkIndex(km_pmdl, "process_dEdr") >=0):
         kimstr += "virial  double  energy  [6]\n"
-    if checkIndex(km_pmdl, "particleVirial") >= 0:
+    if (checkIndex(km_pmdl, "particleVirial") >= 0 or checkIndex(km_pmdl, "process_dEdr") >=0):
         kimstr += "particleVirial  double  energy  [numberOfParticles,6]\n"
-    if checkIndex(km_pmdl, "hessian") >= 0:
+    if (checkIndex(km_pmdl, "hessian") >= 0 or
+	   (checkIndex(km_pmdl, "process_dEdr") >= 0 and checkIndex(km_pmdl, "process_d2Edr2") >= 0)):
         kimstr += "hessian  double  pressure  [numberOfParticles,numberOfParticles,3,3]\n"
     return kimstr
 
