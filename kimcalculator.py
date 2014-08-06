@@ -64,7 +64,7 @@ class KIMCalculator(Calculator):
     on the capabilities of the model with which the calculator
     is initialized.
     """
-    def __init__(self, modelname, testname="", search=True, check_before_update=True, kimstring=""):
+    def __init__(self, modelname, kimfile='', search=True, check_before_update=True, kimstring=""):
         """
         Creates a KIM calculator to ASE for a given modelname.
 
@@ -73,10 +73,9 @@ class KIMCalculator(Calculator):
         modelname: str
             The model with which the calculator is initialized
 
-        tesname: str
-            If testname is given, then KIMCalculator looks on the
-            standard path (KIM_TESTS_DIR/testname) for the relevant
-            .kim file which describes this test's requirements.
+        kimfile: str
+            If kimfile is present, it will use that file to initialize
+            the KIM API. Takes precedence over search and kimstring.
 
         search: bool
             If search if True, it will look in the current
@@ -97,7 +96,7 @@ class KIMCalculator(Calculator):
 
         kimstring: str
             A complete description of what our test requires as passed
-            to the calculator as a proper kimfile string.  This option
+            to the calculator as a proper .kim string.  This option
             overrides all other options.
 
         Returns
@@ -108,27 +107,18 @@ class KIMCalculator(Calculator):
         self.modelname = modelname
         self.check_before_update = check_before_update
         self.teststring = kimstring
-        self.testname = None
-        self.kimfile = False
+        self.kimfile = kimfile
 
-        if not self.teststring:
-            if testname:
-                self.testname = testname
-
-                # we will assume that the kimfile is indeed present
-                # make the KIM API do the error checking if it is not
-                self.kimfile = True
-            else:
-                if search:
-                    # look in the current directory for kim files
-                    potentials = glob.glob("./*.kim")
-                    for pot in potentials:
-                        try:
-                            with open(potentials[0]) as f:
-                                self.teststring = f.read()
-                                self.kimfile = True
-                        except Exception as e:
-                            continue
+        if not self.kimfile:
+            if search:
+                # look in the current directory for kim files
+                potentials = glob.glob("./*.kim")
+                for pot in potentials:
+                    try:
+                        with open(potentials[0]) as f:
+                            self.teststring = f.read()
+                    except Exception as e:
+                        continue
 
         # initialize pointers for kim
         self.km_numberOfAtoms = None
@@ -161,21 +151,20 @@ class KIMCalculator(Calculator):
         self.cell = atoms.get_cell()
         self.cell_orthogonal = orthogonal(self.cell)
 
-        # if we haven't found a kim file yet, then go ahead and make a
-        # KIM string which describes the capabilities that we require
-        if not self.kimfile:
-            self.make_test_string(atoms)
+        if self.kimfile:
+            # initialize with the KIM file in a standard directory
+            status, self.pkim = ks.KIM_API_file_init(self.kimfile,
+                    self.modelname)
+        elif self.teststring:
+            # initialize with the string we found in our kim file
             status, self.pkim = ks.KIM_API_init_str(self.teststring,
                     self.modelname)
         else:
-            if self.teststring:
-                # initialize with the string we found in our kim file
-                status, self.pkim = ks.KIM_API_init_str(self.teststring,
-                        self.modelname)
-            else:
-                # initialize with the KIM file in a standard directory
-                status, self.pkim = ks.KIM_API_init(self.testname,
-                        self.modelname)
+            # if we haven't found a kim file yet, then go ahead and make a
+            # KIM string which describes the capabilities that we require
+            self.make_test_string(atoms)
+            status, self.pkim = ks.KIM_API_init_str(self.teststring,
+                    self.modelname)
 
         if ks.KIM_STATUS_OK != status:
             ks.KIM_API_report_error('KIM_API_init', status)
