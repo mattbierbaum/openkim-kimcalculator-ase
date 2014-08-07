@@ -184,8 +184,8 @@ class KIMCalculator(Calculator):
 
         # get pointers to model inputs
         self.km_numberOfAtoms = ks.KIM_API_get_data_ulonglong(self.pkim, "numberOfParticles")
-        self.km_numberAtomTypes = ks.KIM_API_get_data_int(self.pkim, "numberParticleTypes")
-        self.km_atomTypes = ks.KIM_API_get_data_int(self.pkim, "particleTypes")
+        self.km_numberAtomTypes = ks.KIM_API_get_data_int(self.pkim, "numberOfSpecies")
+        self.km_atomTypes = ks.KIM_API_get_data_int(self.pkim, "particleSpecies")
         self.km_coordinates = ks.KIM_API_get_data_double(self.pkim, "coordinates")
         if checkIndex(self.pkim, "particleCharge") >= 0:
             self.km_particleCharge = ks.KIM_API_get_data_double(self.pkim, "particleCharge")
