@@ -266,7 +266,7 @@ class KIMCalculator(Calculator):
             # fill the proper chemical identifiers
             symbols = atoms.get_chemical_symbols()
             for i in range(natoms):
-                self.km_atomTypes[i] = ks.KIM_API_get_partcl_type_code(self.pkim, symbols[i])
+                self.km_atomTypes[i] = ks.KIM_API_get_species_code(self.pkim, symbols[i])
 
             # build the neighborlist (type depends on model set by pkim)
             if self.uses_neighbors:
@@ -370,6 +370,7 @@ def make_kimscript(testname, modelname, atoms):
     unit_temperature = "K"
     unit_time = "ps"
 
+    kimstr += "KIM_API_Version := 1.6.0\n"
     kimstr += "Unit_length := " + unit_length + "\n"
     kimstr += "Unit_energy := " + unit_energy + "\n"
     kimstr += "Unit_charge := " + unit_charge + "\n"
@@ -377,7 +378,7 @@ def make_kimscript(testname, modelname, atoms):
     kimstr += "Unit_time := " + unit_time + "\n"
 
     # SUPPORTED_ATOM/PARTICLE_TYPES
-    kimstr += "SUPPORTED_ATOM/PARTICLES_TYPES: \n"
+    kimstr += "PARTICLE_SPECIES: \n"
 
     # check ASE atoms class for which atoms it has
     acodes = set(atoms.get_atomic_numbers())
@@ -416,8 +417,8 @@ def make_kimscript(testname, modelname, atoms):
     # MODEL_INPUT section
     kimstr += "MODEL_INPUT:\n"
     kimstr += "numberOfParticles  integer  none  []\n"
-    kimstr += "numberParticleTypes  integer  none  []\n"
-    kimstr += "particleTypes  integer  none  [numberOfParticles]\n"
+    kimstr += "numberOfSpecies integer  none  []\n"
+    kimstr += "particleSpecies  integer  none  [numberOfParticles]\n"
     kimstr += "coordinates  double  length  [numberOfParticles,3]\n"
 
     if atoms.get_charges().any():
