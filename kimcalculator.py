@@ -64,7 +64,7 @@ class KIMCalculator(Calculator):
     on the capabilities of the model with which the calculator
     is initialized.
     """
-    def __init__(self, modelname, kimfile='', search=True, check_before_update=True, kimstring=""):
+    def __init__(self, modelname, kimfile='', search=True, check_before_update=False, kimstring=""):
         """
         Creates a KIM calculator to ASE for a given modelname.
 
@@ -184,7 +184,9 @@ class KIMCalculator(Calculator):
 
         # get pointers to model inputs
         self.km_numberOfAtoms = ks.KIM_API_get_data_ulonglong(self.pkim, "numberOfParticles")
+        self.km_numberOfAtoms[0] = natoms
         self.km_numberAtomTypes = ks.KIM_API_get_data_int(self.pkim, "numberOfSpecies")
+        self.km_numberAtomTypes[0] = ntypes
         self.km_atomTypes = ks.KIM_API_get_data_int(self.pkim, "particleSpecies")
         self.km_coordinates = ks.KIM_API_get_data_double(self.pkim, "coordinates")
         if checkIndex(self.pkim, "particleCharge") >= 0:
@@ -233,7 +235,7 @@ class KIMCalculator(Calculator):
         changed and we need to recalculate..
         """
         return (self.km_energy is None or
-               (self.km_numberOfAtoms != atoms.get_number_of_atoms()) or
+               (self.km_numberOfAtoms[0] != atoms.get_number_of_atoms()) or
                (self.km_atomTypes[:] != atoms.get_atomic_numbers()).any() or
                (self.km_coordinates[:] != atoms.get_positions().flatten()).any() or
                (self.pbc != atoms.get_pbc()).any() or
@@ -249,12 +251,13 @@ class KIMCalculator(Calculator):
         natoms = atoms.get_number_of_atoms()
         ntypes = len(set(atoms.get_atomic_numbers()))
 
-        if (self.km_numberOfAtoms != natoms or
-            self.km_numberAtomTypes != ntypes or
+        if (self.km_numberOfAtoms[0] != natoms or
+            self.km_numberAtomTypes[0] != ntypes or
             self.cell_BC_changed(atoms)):
             self.set_atoms(atoms)
 
-        if self.check_before_update and self.calculation_required(atoms, ""):
+        if (not self.check_before_update or
+            (self.check_before_update and self.calculation_required(atoms, ""))):
             # if the calculation is required we proceed to set the values
             # of the standard things each model and atom class has
             self.km_numberOfAtoms[0] = natoms
@@ -292,7 +295,7 @@ class KIMCalculator(Calculator):
     def get_forces(self, atoms):
         self.update(atoms)
         if self.km_forces is not None:
-            forces = self.km_forces.reshape((self.km_numberOfAtoms, 3))
+            forces = self.km_forces.reshape((self.km_numberOfAtoms[0], 3))
             return forces.copy()
         else:
             raise SupportError("forces")
