@@ -64,7 +64,7 @@ class KIMCalculator(Calculator):
     on the capabilities of the model with which the calculator
     is initialized.
     """
-    def __init__(self, modelname, testname="", search=True, check_before_update=True, kimstring=""):
+    def __init__(self, modelname, kimfile='', search=True, check_before_update=False, kimstring=""):
         """
         Creates a KIM calculator to ASE for a given modelname.
 
@@ -73,10 +73,9 @@ class KIMCalculator(Calculator):
         modelname: str
             The model with which the calculator is initialized
 
-        tesname: str
-            If testname is given, then KIMCalculator looks on the
-            standard path (KIM_TESTS_DIR/testname) for the relevant
-            .kim file which describes this test's requirements.
+        kimfile: str
+            If kimfile is present, it will use that file to initialize
+            the KIM API. Takes precedence over search and kimstring.
 
         search: bool
             If search if True, it will look in the current
@@ -97,7 +96,7 @@ class KIMCalculator(Calculator):
 
         kimstring: str
             A complete description of what our test requires as passed
-            to the calculator as a proper kimfile string.  This option
+            to the calculator as a proper .kim string.  This option
             overrides all other options.
 
         Returns
@@ -108,27 +107,18 @@ class KIMCalculator(Calculator):
         self.modelname = modelname
         self.check_before_update = check_before_update
         self.teststring = kimstring
-        self.testname = None
-        self.kimfile = False
+        self.kimfile = kimfile
 
-        if not self.teststring:
-            if testname:
-                self.testname = testname
-
-                # we will assume that the kimfile is indeed present
-                # make the KIM API do the error checking if it is not
-                self.kimfile = True
-            else:
-                if search:
-                    # look in the current directory for kim files
-                    potentials = glob.glob("./*.kim")
-                    for pot in potentials:
-                        try:
-                            with open(potentials[0]) as f:
-                                self.teststring = f.read()
-                                self.kimfile = True
-                        except Exception as e:
-                            continue
+        if not self.kimfile:
+            if search:
+                # look in the current directory for kim files
+                potentials = glob.glob("./*.kim")
+                for pot in potentials:
+                    try:
+                        with open(potentials[0]) as f:
+                            self.teststring = f.read()
+                    except Exception as e:
+                        continue
 
         # initialize pointers for kim
         self.km_numberOfAtoms = None
@@ -161,21 +151,20 @@ class KIMCalculator(Calculator):
         self.cell = atoms.get_cell()
         self.cell_orthogonal = orthogonal(self.cell)
 
-        # if we haven't found a kim file yet, then go ahead and make a
-        # KIM string which describes the capabilities that we require
-        if not self.kimfile:
-            self.make_test_string(atoms)
+        if self.kimfile:
+            # initialize with the KIM file in a standard directory
+            status, self.pkim = ks.KIM_API_file_init(self.kimfile,
+                    self.modelname)
+        elif self.teststring:
+            # initialize with the string we found in our kim file
             status, self.pkim = ks.KIM_API_init_str(self.teststring,
                     self.modelname)
         else:
-            if self.teststring:
-                # initialize with the string we found in our kim file
-                status, self.pkim = ks.KIM_API_init_str(self.teststring,
-                        self.modelname)
-            else:
-                # initialize with the KIM file in a standard directory
-                status, self.pkim = ks.KIM_API_init(self.testname,
-                        self.modelname)
+            # if we haven't found a kim file yet, then go ahead and make a
+            # KIM string which describes the capabilities that we require
+            self.make_test_string(atoms)
+            status, self.pkim = ks.KIM_API_init_str(self.teststring,
+                    self.modelname)
 
         if ks.KIM_STATUS_OK != status:
             ks.KIM_API_report_error('KIM_API_init', status)
@@ -195,8 +184,10 @@ class KIMCalculator(Calculator):
 
         # get pointers to model inputs
         self.km_numberOfAtoms = ks.KIM_API_get_data_ulonglong(self.pkim, "numberOfParticles")
-        self.km_numberAtomTypes = ks.KIM_API_get_data_int(self.pkim, "numberParticleTypes")
-        self.km_atomTypes = ks.KIM_API_get_data_int(self.pkim, "particleTypes")
+        self.km_numberOfAtoms[0] = natoms
+        self.km_numberAtomTypes = ks.KIM_API_get_data_int(self.pkim, "numberOfSpecies")
+        self.km_numberAtomTypes[0] = ntypes
+        self.km_atomTypes = ks.KIM_API_get_data_int(self.pkim, "particleSpecies")
         self.km_coordinates = ks.KIM_API_get_data_double(self.pkim, "coordinates")
         if checkIndex(self.pkim, "particleCharge") >= 0:
             self.km_particleCharge = ks.KIM_API_get_data_double(self.pkim, "particleCharge")
@@ -244,7 +235,7 @@ class KIMCalculator(Calculator):
         changed and we need to recalculate..
         """
         return (self.km_energy is None or
-               (self.km_numberOfAtoms != atoms.get_number_of_atoms()) or
+               (self.km_numberOfAtoms[0] != atoms.get_number_of_atoms()) or
                (self.km_atomTypes[:] != atoms.get_atomic_numbers()).any() or
                (self.km_coordinates[:] != atoms.get_positions().flatten()).any() or
                (self.pbc != atoms.get_pbc()).any() or
@@ -260,12 +251,13 @@ class KIMCalculator(Calculator):
         natoms = atoms.get_number_of_atoms()
         ntypes = len(set(atoms.get_atomic_numbers()))
 
-        if (self.km_numberOfAtoms != natoms or
-            self.km_numberAtomTypes != ntypes or
+        if (self.km_numberOfAtoms[0] != natoms or
+            self.km_numberAtomTypes[0] != ntypes or
             self.cell_BC_changed(atoms)):
             self.set_atoms(atoms)
 
-        if self.check_before_update and self.calculation_required(atoms, ""):
+        if (not self.check_before_update or
+            (self.check_before_update and self.calculation_required(atoms, ""))):
             # if the calculation is required we proceed to set the values
             # of the standard things each model and atom class has
             self.km_numberOfAtoms[0] = natoms
@@ -277,7 +269,7 @@ class KIMCalculator(Calculator):
             # fill the proper chemical identifiers
             symbols = atoms.get_chemical_symbols()
             for i in range(natoms):
-                self.km_atomTypes[i] = ks.KIM_API_get_partcl_type_code(self.pkim, symbols[i])
+                self.km_atomTypes[i] = ks.KIM_API_get_species_code(self.pkim, symbols[i])
 
             # build the neighborlist (type depends on model set by pkim)
             if self.uses_neighbors:
@@ -303,7 +295,7 @@ class KIMCalculator(Calculator):
     def get_forces(self, atoms):
         self.update(atoms)
         if self.km_forces is not None:
-            forces = self.km_forces.reshape((self.km_numberOfAtoms, 3))
+            forces = self.km_forces.reshape((self.km_numberOfAtoms[0], 3))
             return forces.copy()
         else:
             raise SupportError("forces")
@@ -381,6 +373,7 @@ def make_kimscript(testname, modelname, atoms):
     unit_temperature = "K"
     unit_time = "ps"
 
+    kimstr += "KIM_API_Version := 1.6.0\n"
     kimstr += "Unit_length := " + unit_length + "\n"
     kimstr += "Unit_energy := " + unit_energy + "\n"
     kimstr += "Unit_charge := " + unit_charge + "\n"
@@ -388,7 +381,7 @@ def make_kimscript(testname, modelname, atoms):
     kimstr += "Unit_time := " + unit_time + "\n"
 
     # SUPPORTED_ATOM/PARTICLE_TYPES
-    kimstr += "SUPPORTED_ATOM/PARTICLES_TYPES: \n"
+    kimstr += "PARTICLE_SPECIES: \n"
 
     # check ASE atoms class for which atoms it has
     acodes = set(atoms.get_atomic_numbers())
@@ -427,8 +420,8 @@ def make_kimscript(testname, modelname, atoms):
     # MODEL_INPUT section
     kimstr += "MODEL_INPUT:\n"
     kimstr += "numberOfParticles  integer  none  []\n"
-    kimstr += "numberParticleTypes  integer  none  []\n"
-    kimstr += "particleTypes  integer  none  [numberOfParticles]\n"
+    kimstr += "numberOfSpecies integer  none  []\n"
+    kimstr += "particleSpecies  integer  none  [numberOfParticles]\n"
     kimstr += "coordinates  double  length  [numberOfParticles,3]\n"
 
     if atoms.get_charges().any():
