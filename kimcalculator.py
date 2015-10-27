@@ -64,7 +64,9 @@ class KIMCalculator(Calculator):
     on the capabilities of the model with which the calculator
     is initialized.
     """
-    def __init__(self, modelname, kimfile='', search=True, check_before_update=False, kimstring=""):
+    def __init__(self, modelname, kimfile='', search=True,
+                 check_before_update=False, manual_update_only=False,
+                 kimstring=""):
         """
         Creates a KIM calculator to ASE for a given modelname.
 
@@ -94,6 +96,12 @@ class KIMCalculator(Calculator):
                 54   atoms:    289us     13.8ms
                 1458 atoms:    9.4ms     14.0ms
 
+        manual_update_only: bool
+            If True, the `compute` function (to calculate forces, energies) is
+            only called manually.  In this case, use KIMCalculator.update(atoms)
+            to update energies and forces.  If False, `compute` will be called
+            based on check_before_update flag.
+
         kimstring: str
             A complete description of what our test requires as passed
             to the calculator as a proper .kim string.  This option
@@ -108,6 +116,7 @@ class KIMCalculator(Calculator):
         self.check_before_update = check_before_update
         self.teststring = kimstring
         self.kimfile = kimfile
+        self.manual_update_only = manual_update_only
 
         if not self.kimfile:
             if search:
@@ -278,14 +287,16 @@ class KIMCalculator(Calculator):
             ks.KIM_API_model_compute(self.pkim)
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
-        self.update(atoms)
+        if not self.manual_update_only:
+            self.update(atoms)
         if self.km_energy is not None:
             return self.km_energy.copy()[0]
         else:
             raise SupportError("energy")
 
     def get_potential_energies(self, atoms):
-        self.update(atoms)
+        if not self.manual_update_only:
+            self.update(atoms)
         if self.km_particleEnergy is not None:
             particleEnergies = self.km_particleEnergy
             return particleEnergies.copy()
@@ -293,7 +304,8 @@ class KIMCalculator(Calculator):
             raise SupportError("potential energies")
 
     def get_forces(self, atoms):
-        self.update(atoms)
+        if not self.manual_update_only:
+            self.update(atoms)
         if self.km_forces is not None:
             forces = self.km_forces.reshape((self.km_numberOfAtoms[0], 3))
             return forces.copy()
@@ -301,21 +313,24 @@ class KIMCalculator(Calculator):
             raise SupportError("forces")
 
     def get_stress(self, atoms):
-        self.update(atoms)
+        if not self.manual_update_only:
+            self.update(atoms)
         if self.km_virial is not None:
             return self.km_virial.copy()
         else:
             raise SupportError("stress")
 
     def get_stresses(self, atoms):
-        self.update(atoms)
+        if not self.manual_update_only:
+            self.update(atoms)
         if self.km_particleVirial is not None:
             return self.km_particleVirial.copy()
         else:
             raise SupportError("stress per particle")
 
     def get_hessian(self, atoms):
-        self.update(atoms)
+        if not self.manual_update_only:
+            self.update(atoms)
         if self.km_hessian is not None:
             return self.km_hessian.copy()
         else:
