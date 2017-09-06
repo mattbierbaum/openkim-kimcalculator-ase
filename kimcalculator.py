@@ -292,7 +292,7 @@ class KIMCalculator(Calculator):
         if self.km_energy is not None:
             return self.km_energy.copy()[0]
         else:
-            raise SupportError("energy")
+            raise SupportError("potential energy")
 
     def get_potential_energies(self, atoms):
         if not self.manual_update_only:
@@ -301,7 +301,15 @@ class KIMCalculator(Calculator):
             particleEnergies = self.km_particleEnergy
             return particleEnergies.copy()
         else:
-            raise SupportError("potential energies")
+            raise SupportError("particle energies")
+
+    def get_charges(self, atoms):
+        if not self.manual_update_only:
+            self.update(atoms)
+        if self.km_particleCharge is not None:
+            return self.km_particleCharge.copy()
+        else:
+            raise SupportEnergy("particle charges")
 
     def get_forces(self, atoms):
         if not self.manual_update_only:
